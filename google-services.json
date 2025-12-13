@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "605202277508",
+    "project_id": "kuroom-43397",
+    "storage_bucket": "kuroom-43397.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:605202277508:android:ff5827c3ec68164d0c8ed1",
+        "android_client_info": {
+          "package_name": "com.konkuk.kuroom"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAh2txYn1_vZdIY9tPET4ZITmDm70eJSaI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
