@@ -26,6 +26,8 @@ export async function saveFcmTokenApi(
   });
 
   if (!res.ok) {
+    console.log("서버 api 호출 실패");
+
     let errBody: ApiErrorBody | undefined;
     try {
       errBody = (await res.json()) as ApiErrorBody;
@@ -38,6 +40,8 @@ export async function saveFcmTokenApi(
       `saveFcmTokenApi failed: ${res.status} ${res.statusText}`;
     throw new Error(msg);
   }
+
+  console.log("서버 api 호출 성공");
 
   const contentType = res.headers.get("content-type") ?? "";
   if (contentType.includes("application/json")) {
