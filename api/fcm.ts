@@ -14,12 +14,8 @@ interface ApiErrorBody {
 export async function saveFcmTokenApi(
   accessToken: string,
   body: SaveFcmTokenBody,
-  options?: {
-    baseUrl?: string;
-    signal?: AbortSignal;
-  }
+  baseUrl: string
 ) {
-  const baseUrl = options?.baseUrl ?? "";
   const res = await fetch(`${baseUrl}/users/fcm`, {
     method: "POST",
     headers: {
@@ -27,7 +23,6 @@ export async function saveFcmTokenApi(
       Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify(body),
-    signal: options?.signal,
   });
 
   if (!res.ok) {

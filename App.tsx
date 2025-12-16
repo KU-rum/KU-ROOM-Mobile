@@ -3,55 +3,46 @@ import { StyleSheet } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import WebView from "react-native-webview";
 
-import { getAndroidFcmToken } from "./utils/get-android-fcm-token";
-import { saveFcmTokenApi } from "./api/fcm";
+import {
+  registerFcmToken,
+  subscribeDevTopic,
+  unSubscribeDevTopic,
+} from "./utils/fcm";
 
 const WEB_URL = "https://ku-room.vercel.app";
 
 export default function App() {
   const webViewRef = useRef<WebView | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const didInitRef = useRef(false);
 
   // 웹에서 access token을 받아오도록
-  const handleWebViewMessage = useCallback((event: any) => {
+  const handleWebViewMessage = useCallback(async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
 
       if (data.type === "AUTH_TOKEN" && typeof data.accessToken === "string") {
         setAccessToken(data.accessToken);
       }
+      if (data.type === "UNSUBSCRIBE_DEV" && data.isSubscribe === false) {
+        await unSubscribeDevTopic(data.topic);
+      }
     } catch {
       // ignore
     }
   }, []);
 
-  const sendFcmToken = useCallback(async () => {
-    if (!accessToken) return;
-
-    const fcmToken = await getAndroidFcmToken();
-    if (!fcmToken) return;
-
-    console.log("!!! Access Token : ", accessToken);
-    console.log("!!! FCM Token : ", fcmToken);
-
-    await saveFcmTokenApi(
-      accessToken,
-      { token: fcmToken, deviceType: "ANDROID" },
-      { baseUrl: "https://kuroom.shop/api/v1" }
-    );
-  }, [accessToken]);
-
   useEffect(() => {
-    if (!accessToken) return;
+    if (!accessToken || didInitRef.current) return;
+    didInitRef.current = true;
 
     (async () => {
-      try {
-        await sendFcmToken();
-      } catch (error) {
-        console.error(error);
-      }
-    })();
-  }, [accessToken, sendFcmToken]);
+      await registerFcmToken(accessToken, "https://kuroom.shop/api/v1");
+      await subscribeDevTopic("dev");
+    })().catch(() => {
+      didInitRef.current = false;
+    });
+  }, [accessToken]);
 
   return (
     <SafeAreaProvider>
