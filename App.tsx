@@ -10,6 +10,7 @@ import {
   unSubscribeDevTopic,
   showForegroundNotification,
 } from "./utils";
+import { GeoPromptEvent } from "./types";
 
 const WEB_URL = "https://ku-room.vercel.app";
 
@@ -69,6 +70,10 @@ export default function App() {
           source={{ uri: WEB_URL }}
           style={styles.webview}
           onMessage={handleWebViewMessage}
+          geolocationEnabled={true}
+          onGeolocationPermissionsShowPrompt={(event: GeoPromptEvent) => {
+            event.nativeEvent.callback(true, false);
+          }}
         />
       </SafeAreaView>
     </SafeAreaProvider>

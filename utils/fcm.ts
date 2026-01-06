@@ -1,5 +1,6 @@
 import { PermissionsAndroid, Platform } from "react-native";
 import messaging from "@react-native-firebase/messaging";
+import * as Location from "expo-location";
 
 import { saveFcmTokenApi } from "../api/fcm";
 
@@ -9,16 +10,29 @@ export async function registerFcmToken(accessToken: string, baseUrl: string) {
   console.log("registerFcmToken 실행 : ", accessToken);
   await messaging().registerDeviceForRemoteMessages();
 
-  // 1) 권한 처리 (허용되면 바로 아래로 진행)
+  // 1) 푸시 권한
+  let pushOk = true;
+
   if (Platform.OS === "android") {
-    const ok = await requestAndroidNotificationPermission();
-    console.log("알림 권한 허용 : ", ok);
-    if (!ok) return; // 거부면 여기서 중단 (다음에 다시 시도)
+    pushOk = await requestAndroidNotificationPermission();
+    console.log("알림 권한 허용 : ", pushOk);
   } else {
-    await messaging().requestPermission();
+    const authStatus = await messaging().requestPermission();
+    pushOk =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+    console.log("알림 권한 허용(iOS) : ", pushOk);
   }
 
-  // 2) 토큰 바로 가져오기 (가끔 바로 안 나오면 재시도)
+  // TODO : 앱 설치 직후가 아닌 지도 최초 접근 시 팝업이 뜨도록 수정하기
+  // 2) 위치 권한 (푸시 권한 요청 직후 이어서 팝업 뜨게)
+  const locationOk = await requestLocationPermission();
+  console.log("위치 권한 허용 : ", locationOk);
+
+  // 3) 푸시 거부면 여기서 중단 (하지만 위치 팝업은 이미 뜸)
+  if (!pushOk) return;
+
+  // r) 토큰 바로 가져오기 (가끔 바로 안 나오면 재시도)
   const fcmToken = await getTokenWithRetry();
   console.log("FCM 토큰 받아오기 : ", fcmToken);
   if (!fcmToken) return;
@@ -55,6 +69,16 @@ async function requestAndroidNotificationPermission(): Promise<boolean> {
   );
 
   return granted === PermissionsAndroid.RESULTS.GRANTED;
+}
+
+async function requestLocationPermission(): Promise<boolean> {
+  // 이미 허용돼있으면 바로 true
+  const current = await Location.getForegroundPermissionsAsync();
+  if (current.status === "granted") return true;
+
+  // 팝업 요청
+  const req = await Location.requestForegroundPermissionsAsync();
+  return req.status === "granted";
 }
 
 // 토큰이 바로 안 나오는 경우를 대비한 재시도
